@@ -85,7 +85,7 @@ class Showdown
         total_items = items.size
 
         total_items.times do |i|
-          sentiment = @sentimentalizer.analyze(items[i]).sentiment
+          sentiment = @sentimentalizer.analyze(items[i]).sentiment.to_s
           report(:message => items[i], type: "inline", :complete => sentiment) do
             @results['sentimentalizer'][sentiment.to_s]['result'] += 1 if sentiment == type
             sleep 0.15
