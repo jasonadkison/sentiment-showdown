@@ -33,7 +33,7 @@ class Showdown
   def run
     reset_results
 
-    report(:message => 'Sentimental vs. Sentimentalizer') do
+    report(:message => 'Sentimental Showdown!') do
       sleep 0.25
 
       report(:message => 'Sentimental') do
