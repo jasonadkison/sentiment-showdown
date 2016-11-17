@@ -35,25 +35,20 @@ class Showdown
     reset_results
 
     report(:message => 'Sentimental Showdown!') do
-      sleep 0.25
 
       report(:message => 'Sentimental') do
-        sleep 0.10
         run_sentimental
       end
 
       report(:message => 'Sentimentalizer') do
-        sleep 0.10
         run_sentimentalizer
       end
 
       report(:message => 'AlchemyAPI') do
-        sleep 0.10
         run_alchemy
       end
 
       report(:message => 'MS Text Analytics API') do
-        sleep 0.10
         run_microsoft
       end
 
@@ -82,7 +77,6 @@ class Showdown
           sentiment = @sentimental.sentiment(items[i]).to_s
           report(:message => items[i], type: "inline", :complete => sentiment) do
             @results['sentimental'][sentiment.to_s]['result'] += 1 if sentiment == type
-            sleep 0.15
           end
         end
 
@@ -100,7 +94,6 @@ class Showdown
           sentiment = @sentimentalizer.analyze(items[i]).sentiment.to_s
           report(:message => items[i], type: "inline", :complete => sentiment) do
             @results['sentimentalizer'][sentiment.to_s]['result'] += 1 if sentiment == type
-            sleep 0.15
           end
         end
 
@@ -124,7 +117,6 @@ class Showdown
 
           report(:message => items[i], type: "inline", :complete => sentiment) do
             @results['alchemy'][sentiment.to_s]['result'] += 1 if sentiment == type
-            sleep 0.15
           end
         end
 
@@ -163,7 +155,6 @@ class Showdown
         total_items.times do |i|
           report(:message => items[i], type: "inline", :complete => sentiments[i]) do
             @results['microsoft'][sentiments[i].to_s]['result'] += 1 if sentiments[i] == type
-            sleep 0.15
           end
         end
 
@@ -177,19 +168,22 @@ class Showdown
     aligned "Results"
 
     table(:border => true) do
-     row do
-       column('CALCULATOR', :width => 25)
-       column('NEGATIVES', :width => 25)
-       column('NEUTRALS', :width => 25)
-       column('POSITIVES', :width => 25)
-     end
+      row do
+        column('CALCULATOR', :width => 20)
+        column('NEGATIVES', :width => 20)
+        column('NEUTRALS', :width => 20)
+        column('POSITIVES', :width => 20)
+        column('SCORE', :width => 20)
+      end
 
-     @results.keys.each do |subject|
-       row do
-         column subject
-         column "#{@results[subject]['negative']['result']}/#{@results[subject]['negative']['expected']}"
-         column "#{@results[subject]['neutral']['result']}/#{@results[subject]['neutral']['expected']}"
-         column "#{@results[subject]['positive']['result']}/#{@results[subject]['positive']['expected']}"
+      @results.keys.each do |subject|
+        item = @results[subject]
+        row do
+          column subject
+          column "#{item['negative']['result']}/#{item['negative']['expected']}"
+          column "#{item['neutral']['result']}/#{item['neutral']['expected']}"
+          column "#{item['positive']['result']}/#{item['positive']['expected']}"
+          column (item['negative']['result'] + item['neutral']['result'] + item['positive']['result'])
        end
      end
 
