@@ -14,8 +14,8 @@ class Showdown
 
     # setup results template
     @results = {}
-    %w(sentimental sentimentalizer).each do |gem_name|
-      @results[gem_name] = {}
+    %w(sentimental sentimentalizer alchemy).each do |subject|
+      @results[subject] = {}
     end
 
     # setup sentimental
@@ -37,14 +37,20 @@ class Showdown
       sleep 0.25
 
       report(:message => 'Sentimental') do
-        sleep 0.25
+        sleep 0.10
         run_sentimental
       end
 
       report(:message => 'Sentimentalizer') do
-        sleep 0.25
+        sleep 0.10
         run_sentimentalizer
       end
+
+      report(:message => 'AlchemyAPI') do
+        sleep 0.10
+        run_alchemy
+      end
+
     end
 
     display_results
@@ -53,9 +59,9 @@ class Showdown
   private
 
   def reset_results
-    @results.keys.each do |gem_name|
+    @results.keys.each do |subject|
       @examples.keys.each do |sentiment_type|
-        @results[gem_name][sentiment_type] = { 'expected' => @examples[sentiment_type].size, 'result' => 0 }
+        @results[subject][sentiment_type] = { 'expected' => @examples[sentiment_type].size, 'result' => 0 }
       end
     end
   end
@@ -96,30 +102,50 @@ class Showdown
     end
   end
 
+  def run_alchemy
+    require "uri"
+
+    @results['alchemy'].keys.each do |type|
+      report(:message => type) do
+        items = @examples[type]
+        total_items = items.size
+
+        total_items.times do |i|
+          sentiment = Unirest.get("https://alchemy.p.mashape.com/text/TextGetTextSentiment?outputMode=json&showSourceText=false&text=#{URI.escape(items[i])}",
+                        headers: {
+                          "X-Mashape-Key" => MASHAPE_KEY,
+                          "Accept" => "text/plain"
+                        }).body['docSentiment']['type'] rescue ''
+
+          report(:message => items[i], type: "inline", :complete => sentiment) do
+            @results['alchemy'][sentiment.to_s]['result'] += 1 if sentiment == type
+            sleep 0.15
+          end
+        end
+
+      end
+    end
+
+  end
+
   def display_results
     horizontal_rule(:width => 20)
     aligned "Results"
 
     table(:border => true) do
      row do
-       column('GEM', :width => 20)
-       column('EXPECTED NEGATIVES', :width => 20)
-       column('RESULTING NEGATIVES', :width => 20)
-       column('EXPECTED NEUTRALS', :width => 20)
-       column('RESULTING NEUTRALS', :width => 20)
-       column('EXPECTED POSITIVES', :width => 20)
-       column('RESULTING POSITIVES', :width => 20)
+       column('CALCULATOR', :width => 25)
+       column('NEGATIVES', :width => 25)
+       column('NEUTRALS', :width => 25)
+       column('POSITIVES', :width => 25)
      end
 
-     @results.keys.each do |gem_name|
+     @results.keys.each do |subject|
        row do
-         column gem_name
-         column @results[gem_name]['negative']['expected']
-         column @results[gem_name]['negative']['result']
-         column @results[gem_name]['neutral']['expected']
-         column @results[gem_name]['neutral']['result']
-         column @results[gem_name]['positive']['expected']
-         column @results[gem_name]['positive']['result']
+         column subject
+         column "#{@results[subject]['negative']['result']}/#{@results[subject]['negative']['expected']}"
+         column "#{@results[subject]['neutral']['result']}/#{@results[subject]['neutral']['expected']}"
+         column "#{@results[subject]['positive']['result']}/#{@results[subject]['positive']['expected']}"
        end
      end
 
