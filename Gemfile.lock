@@ -1,0 +1,21 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    colored (1.2)
+    command_line_reporter (3.3.6)
+      colored (>= 1.2)
+    json (1.8.3)
+    sentimental (1.4.0)
+      json (~> 1.8, >= 1.8.3)
+    sentimentalizer (0.3.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  command_line_reporter
+  sentimental
+  sentimentalizer
+
+BUNDLED WITH
+   1.12.5
