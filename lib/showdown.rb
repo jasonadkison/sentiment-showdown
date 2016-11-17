@@ -1,6 +1,7 @@
 class Showdown
   include CommandLineReporter
   require "yaml"
+  require "uri"
 
   EXAMPLES_FILE = "data/sentiment.yml".freeze
 
@@ -14,7 +15,7 @@ class Showdown
 
     # setup results template
     @results = {}
-    %w(sentimental sentimentalizer alchemy).each do |subject|
+    %w(sentimental sentimentalizer alchemy microsoft).each do |subject|
       @results[subject] = {}
     end
 
@@ -49,6 +50,11 @@ class Showdown
       report(:message => 'AlchemyAPI') do
         sleep 0.10
         run_alchemy
+      end
+
+      report(:message => 'MS Text Analytics API') do
+        sleep 0.10
+        run_microsoft
       end
 
     end
@@ -103,7 +109,6 @@ class Showdown
   end
 
   def run_alchemy
-    require "uri"
 
     @results['alchemy'].keys.each do |type|
       report(:message => type) do
@@ -119,6 +124,45 @@ class Showdown
 
           report(:message => items[i], type: "inline", :complete => sentiment) do
             @results['alchemy'][sentiment.to_s]['result'] += 1 if sentiment == type
+            sleep 0.15
+          end
+        end
+
+      end
+    end
+
+  end
+
+  def run_microsoft
+    @results['microsoft'].keys.each do |type|
+      report(:message => type) do
+        items = @examples[type]
+        total_items = items.size
+
+        sentiments = Unirest.post("https://westus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment",
+                      headers: {
+                        "Ocp-Apim-Subscription-Key" => MICROSOFT_KEY,
+                        "Content-Type" => "application/json",
+                        "Accept" => "application/json"
+                      },
+                      parameters: {
+                        :documents => items.each_with_index.map { |item, index| { :language => :en, :id => index, :text => item } }
+                      }.to_json).body['documents'].map { |result|
+                        score = result['score'].to_f.round(2)
+                        if score < 0.33
+                          'negative'
+                        elsif score >= 0.33 && score < 0.66
+                          'neutral'
+                        elsif score >= 0.66
+                          'positive'
+                        else
+                          "unknown"
+                        end
+                      }
+
+        total_items.times do |i|
+          report(:message => items[i], type: "inline", :complete => sentiments[i]) do
+            @results['microsoft'][sentiments[i].to_s]['result'] += 1 if sentiments[i] == type
             sleep 0.15
           end
         end
